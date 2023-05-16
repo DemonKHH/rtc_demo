@@ -6,7 +6,7 @@
       <button @click="leaveRoom">Leave Room</button>
     </div>
     <div>
-      <div v-for="peer in peers" :key="peer.peerId">
+      <div v-for="peer in rtcInfo.peers" :key="peer.peerId">
         <h2>Peer {{ peer.peerId }}</h2>
         <audio :srcObject="peer.stream" autoplay></audio>
       </div>
@@ -17,25 +17,28 @@
 <script setup>
 import Peer from "peerjs";
 import { io } from "socket.io-client";
+import {reactive} from "vue"
 
-let peer = null;
-let peers = [];
-let socket = null;
+const rtcInfo = reactive({
+  peer: null,
+  peers: [],
+  socket: null
+})
 
 const leaveRoom = () => {
-  peer.disconnect();
-  peers.forEach((peer) => {
-    peer.call.close();
+  rtcInfo.peer.disconnect();
+  rtcInfo.peers.forEach((peer) => {
+    rtcInfo.peer.call.close();
   });
-  peers = [];
-  socket.disconnect();
+  rtcInfo.peers = [];
+  rtcInfo.socket.disconnect();
 };
 const connectToPeer = (peerId) => {
   console.log("Connecting to peer " + peerId + "...");
   navigator.mediaDevices
     .getUserMedia({ audio: true })
     .then((stream) => {
-      const call = peer.call(peerId, stream);
+      const call = rtcInfo.peer.call(peerId, stream);
       call.on("stream", (remoteStream) => {
         addPeer(peerId, remoteStream);
       });
@@ -48,33 +51,34 @@ const connectToPeer = (peerId) => {
     });
 };
 const addPeer = (peerId, stream) => {
-  if (!peers.find((peer) => peer.peerId === peerId)) {
-    peers.push({ peerId, stream });
+  console.log('addPeer==', peerId)
+  if (!rtcInfo.peers.find((peer) => rtcInfo.peer.peerId === peerId)) {
+    rtcInfo.peers.push({ peerId, stream });
   }
 };
 const removePeer = (peerId) => {
-  const index = peers.findIndex((peer) => peer.peerId === peerId);
+  const index = rtcInfo.peers.findIndex((peer) => rtcInfo.peer.peerId === peerId);
   if (index >= 0) {
-    peers.splice(index, 1);
+    rtcInfo.peers.splice(index, 1);
   }
 };
 
 const joinRoom = () => {
   const roomId = prompt("Please enter room ID:");
-  socket = io("http://127.0.0.1:8001", {
+  rtcInfo.socket = io("http://127.0.0.1:8001", {
     query: {},
     transports: ["websocket", "polling"],
     timeout: 5000,
   });
 
-  peer = new Peer(`laiya_peer${new Date().getTime()}`);
+  rtcInfo.peer = new Peer(`laiya_peer${new Date().getTime()}`);
 
-  peer.on("open", (id) => {
+  rtcInfo.peer.on("open", (id) => {
     console.log("My peer ID is: " + id);
-    socket.emit("register", { peerId: id, roomId });
+    rtcInfo.socket.emit("register", { peerId: id, roomId });
   });
 
-  peer.on("call", (call) => {
+  rtcInfo.peer.on("call", (call) => {
     console.log("Received call from " + call.peer);
     navigator.mediaDevices
       .getUserMedia({ audio: true })
@@ -87,25 +91,25 @@ const joinRoom = () => {
       });
   });
 
-  socket.on("peer-connected", (data) => {
+  rtcInfo.socket.on("peer-connected", (data) => {
     const peerId = data.peerId;
     console.log("Peer " + peerId + " connected.");
     connectToPeer(peerId);
   });
 
-  socket.on("peer-disconnected", (data) => {
+  rtcInfo.socket.on("peer-disconnected", (data) => {
     const peerId = data.peerId;
     console.log("Peer " + peerId + " disconnected.");
     removePeer(peerId);
   });
 
-  socket.on("offer", (data) => {
+  rtcInfo.socket.on("offer", (data) => {
     const { offer, fromPeerId } = data;
     console.log(`Received offer from ${fromPeerId}.`);
     navigator.mediaDevices
       .getUserMedia({ audio: true })
       .then((stream) => {
-        const call = peer.call(fromPeerId, stream);
+        const call = rtcInfo.peer.call(fromPeerId, stream);
         call.on("stream", (remoteStream) => {
           addPeer(fromPeerId, remoteStream);
         });
@@ -119,22 +123,22 @@ const joinRoom = () => {
       });
   });
 
-  socket.on("answer", (data) => {
+  rtcInfo.socket.on("answer", (data) => {
     const { answer, fromPeerId } = data;
     console.log(`Received answer from ${fromPeerId}.`);
-    const call = peer.call(
+    const call = rtcInfo.peer.call(
       fromPeerId,
-      peers.find((peer) => peer.peerId === fromPeerId).stream
+      rtcInfo.peers.find((peer) => rtcInfo.peer.peerId === fromPeerId).stream
     );
     call.answer(answer);
   });
 
-  socket.on("candidate", (data) => {
+  rtcInfo.socket.on("candidate", (data) => {
     const { candidate, fromPeerId } = data;
     console.log(`Received candidate from ${fromPeerId}.`);
-    const call = peer.call(
+    const call = rtcInfo.peer.call(
       fromPeerId,
-      peers.find((peer) => peer.peerId === fromPeerId).stream
+      rtcInfo.peers.find((peer) => rtcInfo.peer.peerId === fromPeerId).stream
     );
     call.answer(candidate);
   });
