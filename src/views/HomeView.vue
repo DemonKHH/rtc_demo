@@ -17,13 +17,13 @@
 <script setup>
 import Peer from "peerjs";
 import { io } from "socket.io-client";
-import {reactive} from "vue"
+import { reactive } from "vue";
 
 const rtcInfo = reactive({
   peer: null,
   peers: [],
-  socket: null
-})
+  socket: null,
+});
 
 const leaveRoom = () => {
   rtcInfo.peer.disconnect();
@@ -51,13 +51,15 @@ const connectToPeer = (peerId) => {
     });
 };
 const addPeer = (peerId, stream) => {
-  console.log('addPeer==', peerId)
+  console.log("addPeer==", peerId);
   if (!rtcInfo.peers.find((peer) => rtcInfo.peer.peerId === peerId)) {
     rtcInfo.peers.push({ peerId, stream });
   }
 };
 const removePeer = (peerId) => {
-  const index = rtcInfo.peers.findIndex((peer) => rtcInfo.peer.peerId === peerId);
+  const index = rtcInfo.peers.findIndex(
+    (peer) => rtcInfo.peer.peerId === peerId
+  );
   if (index >= 0) {
     rtcInfo.peers.splice(index, 1);
   }
@@ -71,7 +73,15 @@ const joinRoom = () => {
     timeout: 5000,
   });
 
-  rtcInfo.peer = new Peer(`laiya_peer${new Date().getTime()}`);
+  rtcInfo.peer = new Peer(`laiya_peer${new Date().getTime()}`, {
+    config: {
+      audioProcessingOptions: {
+        echoCancellation: true, // 启用 AEC
+        autoGainControl: true, // 启用 AGC
+        noiseSuppression: true, // 启用 NS
+      },
+    },
+  });
 
   rtcInfo.peer.on("open", (id) => {
     console.log("My peer ID is: " + id);
