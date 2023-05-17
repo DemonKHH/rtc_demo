@@ -71,8 +71,13 @@ const joinRoom = () => {
     query: {},
     transports: ["websocket", "polling"],
     timeout: 5000,
-    path: "/ws",
   });
+  // rtcInfo.socket = io("http://127.0.0.1:8002", {
+  //   query: {},
+  //   transports: ["websocket", "polling"],
+  //   timeout: 5000,
+  //   // path: "/",
+  // });
 
   rtcInfo.peer = new Peer(`laiya_peer${new Date().getTime()}`, {
     config: {
