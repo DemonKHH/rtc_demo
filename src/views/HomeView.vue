@@ -67,7 +67,7 @@ const removePeer = (peerId) => {
 
 const joinRoom = () => {
   const roomId = prompt("Please enter room ID:");
-  rtcInfo.socket = io("http://127.0.0.1:8001", {
+  rtcInfo.socket = io("https://short.hithit.cn/ws", {
     query: {},
     transports: ["websocket", "polling"],
     timeout: 5000,
