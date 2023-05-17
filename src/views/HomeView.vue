@@ -67,10 +67,11 @@ const removePeer = (peerId) => {
 
 const joinRoom = () => {
   const roomId = prompt("Please enter room ID:");
-  rtcInfo.socket = io("https://short.hithit.cn/ws", {
+  rtcInfo.socket = io("https://short.hithit.cn", {
     query: {},
     transports: ["websocket", "polling"],
     timeout: 5000,
+    path: "/ws",
   });
 
   rtcInfo.peer = new Peer(`laiya_peer${new Date().getTime()}`, {
