@@ -24,6 +24,21 @@ const rtcInfo = reactive({
   peers: [],
   socket: null,
 });
+const getUserMedia = () => {
+  return navigator.mediaDevices
+    .getUserMedia({
+      audio: {
+        echoCancellation: true, // 启用 AEC
+        autoGainControl: true, // 启用 AGC
+        noiseSuppression: true, // 启用 NS
+      }
+    })
+    .then((stream) => {
+      return Promise.resolve(stream)
+    }).catch(err => {
+      return Promise.reject(err)
+    })
+}
 
 const leaveRoom = () => {
   rtcInfo.peer.disconnect();
@@ -35,8 +50,7 @@ const leaveRoom = () => {
 };
 const connectToPeer = (peerId) => {
   console.log("Connecting to peer " + peerId + "...");
-  navigator.mediaDevices
-    .getUserMedia({ audio: true })
+  getUserMedia()
     .then((stream) => {
       const call = rtcInfo.peer.call(peerId, stream);
       call.on("stream", (remoteStream) => {
@@ -80,13 +94,13 @@ const joinRoom = () => {
   // });
 
   rtcInfo.peer = new Peer(`laiya_peer${new Date().getTime()}`, {
-    config: {
-      audioProcessingOptions: {
-        echoCancellation: true, // 启用 AEC
-        autoGainControl: true, // 启用 AGC
-        noiseSuppression: true, // 启用 NS
-      },
-    },
+    // config: {
+    //   audioProcessingOptions: {
+    //     echoCancellation: true, // 启用 AEC
+    //     autoGainControl: true, // 启用 AGC
+    //     noiseSuppression: true, // 启用 NS
+    //   },
+    // },
   });
 
   rtcInfo.peer.on("open", (id) => {
@@ -96,8 +110,7 @@ const joinRoom = () => {
 
   rtcInfo.peer.on("call", (call) => {
     console.log("Received call from " + call.peer);
-    navigator.mediaDevices
-      .getUserMedia({ audio: true })
+    getUserMedia()
       .then((stream) => {
         call.answer(stream);
         addPeer(call.peer, stream);
@@ -122,8 +135,7 @@ const joinRoom = () => {
   rtcInfo.socket.on("offer", (data) => {
     const { offer, fromPeerId } = data;
     console.log(`Received offer from ${fromPeerId}.`);
-    navigator.mediaDevices
-      .getUserMedia({ audio: true })
+    getUserMedia()
       .then((stream) => {
         const call = rtcInfo.peer.call(fromPeerId, stream);
         call.on("stream", (remoteStream) => {
