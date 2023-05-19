@@ -183,8 +183,4 @@ const joinRoom = () => {
     call.answer(candidate);
   });
 };
-
-onMounted(() => {
-  getUserMedia()
-});
 </script>
