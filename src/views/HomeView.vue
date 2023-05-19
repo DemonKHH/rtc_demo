@@ -24,6 +24,16 @@ const rtcInfo = reactive({
   peers: [],
   socket: null,
 });
+
+const connectAudio = (stream) => {
+  const audioCtx = new AudioContext();
+  const sourceNode = audioCtx.createMediaStreamSource(stream);
+  const gainNode = audioCtx.createGain();
+  sourceNode.connect(gainNode);
+  gainNode.connect(audioCtx.destination);
+  // 控制音量
+  gainNode.gain.value = 0.5;
+}
 const getUserMedia = () => {
   return navigator.mediaDevices
     .getUserMedia({
@@ -34,6 +44,7 @@ const getUserMedia = () => {
       }
     })
     .then((stream) => {
+      connectAudio(stream)
       return Promise.resolve(stream)
     }).catch(err => {
       return Promise.reject(err)
