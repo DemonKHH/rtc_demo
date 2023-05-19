@@ -17,7 +17,7 @@
 <script setup>
 import Peer from "peerjs";
 import { io } from "socket.io-client";
-import { reactive } from "vue";
+import { onMounted, reactive } from "vue";
 
 const rtcInfo = reactive({
   peer: null,
@@ -25,15 +25,16 @@ const rtcInfo = reactive({
   socket: null,
 });
 
-const connectAudio = (stream) => {
+const connectAudio = (stream, volume = 0.1) => {
   const audioCtx = new AudioContext();
   const sourceNode = audioCtx.createMediaStreamSource(stream);
   const gainNode = audioCtx.createGain();
   sourceNode.connect(gainNode);
-  gainNode.connect(audioCtx.destination);
   // 控制音量
-  gainNode.gain.value = 0.5;
+  gainNode.gain.setValueAtTime(volume, audioCtx.currentTime);
+  gainNode.connect(audioCtx.destination);
 }
+
 const getUserMedia = () => {
   return navigator.mediaDevices
     .getUserMedia({
@@ -182,4 +183,8 @@ const joinRoom = () => {
     call.answer(candidate);
   });
 };
+
+onMounted(() => {
+  getUserMedia()
+});
 </script>
